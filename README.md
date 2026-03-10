@@ -1,16 +1,72 @@
-# React + Vite
+# ExtractIQ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based OCR utility tool that extracts text from images while preserving original layout and spacing. It uses the OCR.space API for text recognition and features a fully responsive, dark-mode-enabled UI.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Frontend:** React, Vite
+- **Styling:** Tailwind CSS v4
+- **API:** OCR.space REST API
+- **Deployment:** Vercel
 
-## React Compiler
+## Local Setup
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Clone the repository**
 
-## Expanding the ESLint configuration
+```bash
+git clone https://github.com/Nitishsarma45678/extract-iq.git
+cd extract-iq
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2. **Install dependencies**
+
+```bash
+npm install
+```
+
+3. **Configure Environment Variables**
+
+Create a `.env` file in the root directory.
+
+You will need a free API key from OCR.space.
+
+Add the following:
+
+```env
+VITE_OCR_API_KEY=your_api_key_here
+```
+
+4. **Run the development server**
+
+```bash
+npm run dev
+```
+
+The app will be available at:
+
+```
+http://localhost:5173/
+```
+
+## Deployment
+
+This project is deployed on Vercel.
+
+To deploy your own version:
+
+1. Push your code to GitHub.
+2. Import the repository into Vercel.
+3. Add the `VITE_OCR_API_KEY` in Vercel Environment Variables.
+4. Deploy.
+
+## Features
+
+- Extracts text from images using OCR
+- Preserves original spacing and layout
+- Fully responsive (mobile + desktop)
+- Dark mode support
+- Fast build with Vite
+
+## License
+
+This project is open-source and available under the MIT License.
