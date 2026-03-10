@@ -4,6 +4,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [image, setImage] = useState(null);
+  const [fileDetails, setFileDetails] = useState({ name: '', size: '' }); 
   const [extractedText, setExtractedText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -12,7 +13,14 @@ function App() {
   const fileInputRef = useRef(null);
   const outputRef = useRef(null);
 
-  // Auto-scroll to output when extraction finishes on mobile
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   useEffect(() => {
     if (!isLoading && extractedText && outputRef.current && window.innerWidth < 1024) {
       outputRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -56,7 +64,6 @@ function App() {
       const parsedText = data.ParsedResults?.[0]?.ParsedText || '';
       const cleanText = parsedText.trim();
 
-      // Basic Noise Filter: If it's mostly symbols and very short, or just symbols on a long string (like shirt patterns)
       const hasLetters = /[a-zA-Z]/.test(cleanText);
       
       if (!cleanText || (!hasLetters && cleanText.length > 0)) {
@@ -80,6 +87,7 @@ function App() {
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
       setImage(URL.createObjectURL(file));
+      setFileDetails({ name: file.name, size: formatFileSize(file.size) }); 
       processImage(file);
     }
   };
@@ -88,6 +96,7 @@ function App() {
     const file = e.target.files[0];
     if (file && file.type.startsWith('image/')) {
       setImage(URL.createObjectURL(file));
+      setFileDetails({ name: file.name, size: formatFileSize(file.size) }); 
       processImage(file);
     }
   };
@@ -97,6 +106,11 @@ function App() {
     try {
       await navigator.clipboard.writeText(extractedText);
       setIsCopied(true);
+      
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+
       setTimeout(() => setIsCopied(false), 2000); 
     } catch (err) {
       console.error('Failed to copy text:', err);
@@ -105,6 +119,7 @@ function App() {
 
   const handleReset = () => {
     setImage(null);
+    setFileDetails({ name: '', size: '' }); 
     setExtractedText('');
     setIsCopied(false);
     setError(null);
@@ -116,9 +131,9 @@ function App() {
 
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/30 transition-colors duration-300">
+      <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/30 transition-colors duration-300">
         
-        <header className="border-b border-slate-200 dark:border-slate-800/60 bg-white/50 dark:bg-[#0B0F19]/50 backdrop-blur-xl sticky top-0 z-50">
+        <header className="border-b border-slate-200 dark:border-slate-800/60 bg-white/50 dark:bg-[#0B0F19]/50 backdrop-blur-xl sticky top-0 z-50 flex-shrink-0">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
@@ -154,25 +169,35 @@ function App() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
+        <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
           <div className="mb-6 lg:mb-8">
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mb-2">Workspace</h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm">Upload an image to securely extract its text contents.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            
-            {/* SOURCE CARD */}
             <div className={`flex flex-col bg-white dark:bg-[#111520] rounded-2xl border transition-all duration-500 overflow-hidden ${
               image 
                 ? 'border-[#4f39f6] shadow-[0_0_20px_rgba(79,57,246,0.3)]' 
                 : 'border-[#4f39f6]/30 shadow-sm'
             }`}>
+              
+              {/* UPDATED HEADER AREA */}
               <div className="px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-200 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-transparent">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                   Source Image
                 </h2>
+                
+                {/* NEW: File details moved to the right side of the header */}
+                {fileDetails.name && (
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-sm max-w-[60%] sm:max-w-[70%]">
+                    <svg className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span className="truncate">{fileDetails.name}</span>
+                    <span className="text-slate-300 dark:text-slate-600 flex-shrink-0">•</span>
+                    <span className="flex-shrink-0">{fileDetails.size}</span>
+                  </div>
+                )}
               </div>
 
               <div className="p-4 lg:p-6 flex-1 flex flex-col">
@@ -189,9 +214,10 @@ function App() {
                   
                   {image ? (
                     <div className="relative w-full h-full flex items-center justify-center group">
-                      <img src={image} alt="Source" className="max-h-[200px] lg:max-h-[400px] object-contain" />
+                      <img src={image} alt="Source" className="max-h-[200px] lg:max-h-[400px] object-contain rounded-lg" />
+                      
                       <div 
-                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20 rounded-xl"
                         onClick={() => fileInputRef.current.click()}
                       >
                         <span className="px-4 py-2 rounded-lg bg-white/10 text-white font-medium text-sm border border-white/20 backdrop-blur-md">
@@ -211,13 +237,12 @@ function App() {
               </div>
             </div>
 
-            {/* OUTPUT CARD */}
             <div ref={outputRef} className={`flex flex-col bg-white dark:bg-[#111520] rounded-2xl border transition-all duration-500 overflow-hidden h-full min-h-[350px] lg:min-h-[400px] scroll-mt-20 ${
               extractedText 
                 ? 'border-[#4f39f6] shadow-[0_0_20px_rgba(79,57,246,0.3)]' 
                 : 'border-[#4f39f6]/30 shadow-sm'
             }`}>
-              <div className="px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-200 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-transparent">
+              <div className="px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-200 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-transparent z-20">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${extractedText ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
                   Output
@@ -245,14 +270,14 @@ function App() {
               <div className="relative flex-1 bg-slate-50/50 dark:bg-[#0B0F19]/50 flex flex-col">
                 
                 {isLoading && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/80 dark:bg-[#111520]/80 backdrop-blur-sm">
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 dark:bg-[#111520]/80 backdrop-blur-sm">
                     <div className="w-8 h-8 border-2 border-indigo-200 dark:border-indigo-900 border-t-indigo-600 dark:border-t-indigo-500 rounded-full animate-spin mb-4"></div>
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400 animate-pulse">Running OCR Engine...</p>
                   </div>
                 )}
 
                 {error && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center p-6 text-center">
+                  <div className="absolute inset-0 z-20 flex items-center justify-center p-6 text-center">
                     <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-5 flex items-center gap-4 max-w-sm shadow-xl shadow-red-500/5">
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
                         <svg className="w-5 h-5 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -268,10 +293,27 @@ function App() {
                     </div>
                   </div>
                 )}
+
+                {!extractedText && !isLoading && !error && (
+                  <div className="absolute inset-0 z-0 flex flex-col items-center justify-center p-6 text-center pointer-events-none">
+                    <div className="relative mb-4">
+                      <svg className="w-16 h-16 lg:w-20 lg:h-20 text-slate-200 dark:text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      <svg className="w-8 h-8 lg:w-10 lg:h-10 text-indigo-400 dark:text-indigo-600 absolute -bottom-2 -right-2 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="6" strokeWidth="2" className="text-indigo-200 dark:text-indigo-900/50" fill="currentColor"></circle>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6"></path>
+                      </svg>
+                    </div>
+                    <p className="text-slate-400 dark:text-slate-600 font-medium text-sm">
+                      Waiting Extraction...
+                    </p>
+                  </div>
+                )}
                 
                 <textarea
-                  className="flex-1 w-full p-4 lg:p-6 bg-transparent border-none focus:ring-0 resize-none outline-none text-slate-700 dark:text-slate-300 font-mono text-sm leading-relaxed"
-                  placeholder={image ? "" : "Extracted Text will be visible here.."}
+                  className="flex-1 w-full p-4 lg:p-6 bg-transparent border-none focus:ring-0 resize-none outline-none text-slate-700 dark:text-slate-300 font-mono text-sm leading-relaxed z-10 relative"
+                  placeholder=""
                   value={extractedText}
                   onChange={(e) => setExtractedText(e.target.value)} 
                   spellCheck="false"
@@ -280,6 +322,34 @@ function App() {
             </div>
           </div>
         </main>
+
+        <footer className="mt-auto border-t border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-[#0B0F19] py-6 lg:py-8">
+          <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              © {new Date().getFullYear()} ExtractIQ. All rights reserved.
+            </p>
+            
+            <div className="flex items-center gap-6">
+              <a 
+                href="https://github.com" 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-[#4f39f6] dark:hover:text-[#4f39f6] transition-colors"
+              >
+                GitHub
+              </a>
+              <a 
+                href="#" 
+                target="_blank" 
+                rel="noreferrer"
+                className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-[#4f39f6] dark:hover:text-[#4f39f6] transition-colors"
+              >
+                Portfolio
+              </a>
+            </div>
+          </div>
+        </footer>
+
       </div>
     </div>
   );
