@@ -10,12 +10,10 @@ function App() {
   const [error, setError] = useState(null); 
   
   const fileInputRef = useRef(null);
-  // NEW: Reference to the output panel for auto-scrolling
   const outputRef = useRef(null);
 
-  // NEW: Auto-scroll to output when extraction finishes
+  // Auto-scroll to output when extraction finishes on mobile
   useEffect(() => {
-    // Only scroll if we just finished loading, we have text, and we are on a mobile/tablet screen
     if (!isLoading && extractedText && outputRef.current && window.innerWidth < 1024) {
       outputRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -27,36 +25,47 @@ function App() {
     setIsCopied(false);
     setError(null); 
 
+    // Safety check for Vercel Environment Variables
+    const apiKey = import.meta.env.VITE_OCR_API_KEY;
+    if (!apiKey) {
+      setError("API Configuration missing. Please check Vercel environment variables.");
+      setIsLoading(false);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('apikey', import.meta.env.VITE_OCR_API_KEY);
+    formData.append('apikey', apiKey);
     formData.append('language', 'eng');
     formData.append('isOverlayRequired', 'false');
-    formData.append('scale', 'true');
-    formData.append('OCREngine', '2');
+    formData.append('OCREngine', '2'); // Faster engine for production
+    // 'scale' removed to stay under Vercel's 10s serverless timeout
 
     try {
-      const response = await fetch('https://api.ocr.space/parse/image', {
+      // Using api8.ocr.space for better stability in production
+      const response = await fetch('https://api8.ocr.space/parse/image', {
         method: 'POST',
         body: formData,
       });
 
+      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
       const data = await response.json();
 
       if (data.IsErroredOnProcessing) {
-        throw new Error(data.ErrorMessage[0] || 'Failed to process image');
+        throw new Error(data.ErrorMessage ? data.ErrorMessage[0] : 'Processing error');
       }
 
-      const parsedText = data.ParsedResults[0]?.ParsedText || '';
+      const parsedText = data.ParsedResults?.[0]?.ParsedText || '';
       
       if (!parsedText.trim()) {
-        setError("No readable text could be found in this image.");
+        setError("No readable text found. Try a clearer image.");
       } else {
         setExtractedText(parsedText.trim());
       }
     } catch (err) {
-      console.error('API Error:', err);
-      setError('Connection failed. Please check your internet or API key.');
+      console.error('OCR Error:', err);
+      setError('Connection timed out or failed. Please try a smaller image.');
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +108,6 @@ function App() {
     setIsCopied(false);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = ''; 
-    // Scroll back to top on mobile when cleared
     if (window.innerWidth < 1024) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -109,7 +117,6 @@ function App() {
     <div className={isDarkMode ? 'dark' : ''}>
       <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans selection:bg-indigo-500/30 transition-colors duration-300">
         
-        {/* Top Navigation Bar */}
         <header className="border-b border-slate-200 dark:border-slate-800/60 bg-white/50 dark:bg-[#0B0F19]/50 backdrop-blur-xl sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -131,32 +138,28 @@ function App() {
                 </button>
               )}
               
-<button 
-  onClick={() => setIsDarkMode(!isDarkMode)}
-  className="p-2.5 rounded-xl bg-white dark:bg-[#111520] text-indigo-600 dark:text-indigo-400 border-2 border-indigo-600 dark:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all duration-200 active:scale-95 shadow-sm"
-  aria-label="Toggle Dark Mode"
->
-  {isDarkMode ? (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-  ) : (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-  )}
-</button>
+              <button 
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="p-2.5 rounded-xl bg-white dark:bg-[#111520] text-indigo-600 dark:text-indigo-400 border-2 border-indigo-600 dark:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all duration-200 active:scale-95 shadow-sm"
+                aria-label="Toggle Dark Mode"
+              >
+                {isDarkMode ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                )}
+              </button>
             </div>
           </div>
         </header>
 
-        {/* Main Workspace */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
-          
           <div className="mb-6 lg:mb-8">
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight mb-2">Workspace</h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm">Upload an image to securely extract its text contents.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            
-            {/* Panel 1: Input */}
             <div className="flex flex-col bg-white dark:bg-[#111520] rounded-2xl border border-slate-200 dark:border-slate-800/60 shadow-sm overflow-hidden">
               <div className="px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-200 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-transparent">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
@@ -179,7 +182,6 @@ function App() {
                   
                   {image ? (
                     <div className="relative w-full h-full flex items-center justify-center group">
-                      {/* UPDATED: Shorter max-height on mobile (200px), larger on desktop (400px) */}
                       <img src={image} alt="Source" className="max-h-[200px] lg:max-h-[400px] object-contain" />
                       <div 
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
@@ -202,8 +204,6 @@ function App() {
               </div>
             </div>
 
-            {/* Panel 2: Output */}
-            {/* NEW: Added the outputRef here to target the scroll anchor! */}
             <div ref={outputRef} className="flex flex-col bg-white dark:bg-[#111520] rounded-2xl border border-slate-200 dark:border-slate-800/60 shadow-sm overflow-hidden h-full min-h-[350px] lg:min-h-[400px] scroll-mt-20">
               <div className="px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-200 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-transparent">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
@@ -240,7 +240,7 @@ function App() {
                 )}
 
                 {error && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
+                  <div className="absolute inset-0 z-10 flex items-center justify-center p-6 text-center">
                     <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-4 flex items-start gap-3 max-w-sm">
                       <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                       <div>
@@ -260,7 +260,6 @@ function App() {
                 />
               </div>
             </div>
-
           </div>
         </main>
       </div>
