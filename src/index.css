@@ -31,3 +31,9 @@ textarea::-webkit-scrollbar-thumb {
 .dark textarea::-webkit-scrollbar-thumb {
   background-color: #334155; /* slate-700 */
 }
+
+/* Add this at the very bottom of index.css */
+@keyframes scan {
+  0%, 100% { top: 0%; }
+  50% { top: calc(100% - 2px); }
+}
