@@ -25,7 +25,6 @@ function App() {
     setIsCopied(false);
     setError(null); 
 
-    // Safety check for Vercel Environment Variables
     const apiKey = import.meta.env.VITE_OCR_API_KEY;
     if (!apiKey) {
       setError("API Configuration missing. Please check Vercel environment variables.");
@@ -38,11 +37,9 @@ function App() {
     formData.append('apikey', apiKey);
     formData.append('language', 'eng');
     formData.append('isOverlayRequired', 'false');
-    formData.append('OCREngine', '2'); // Faster engine for production
-    // 'scale' removed to stay under Vercel's 10s serverless timeout
+    formData.append('OCREngine', '2'); 
 
     try {
-      // Using api8.ocr.space for better stability in production
       const response = await fetch('https://api8.ocr.space/parse/image', {
         method: 'POST',
         body: formData,
@@ -57,11 +54,15 @@ function App() {
       }
 
       const parsedText = data.ParsedResults?.[0]?.ParsedText || '';
+      const cleanText = parsedText.trim();
+
+      // Basic Noise Filter: If it's mostly symbols and very short, or just symbols on a long string (like shirt patterns)
+      const hasLetters = /[a-zA-Z]/.test(cleanText);
       
-      if (!parsedText.trim()) {
+      if (!cleanText || (!hasLetters && cleanText.length > 0)) {
         setError("No readable text found. Try a clearer image.");
       } else {
-        setExtractedText(parsedText.trim());
+        setExtractedText(cleanText);
       }
     } catch (err) {
       console.error('OCR Error:', err);
@@ -132,7 +133,7 @@ function App() {
                   onClick={handleReset}
                   className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm font-semibold text-white bg-red-500 hover:bg-red-600 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 dark:border dark:border-red-500/30 rounded-lg transition-all active:scale-95 shadow-sm"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16"></path></svg>
                   <span className="hidden sm:inline">Clear Workspace</span>
                   <span className="sm:hidden">Clear</span>
                 </button>
@@ -160,7 +161,13 @@ function App() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-            <div className="flex flex-col bg-white dark:bg-[#111520] rounded-2xl border border-slate-200 dark:border-slate-800/60 shadow-sm overflow-hidden">
+            
+            {/* SOURCE CARD */}
+            <div className={`flex flex-col bg-white dark:bg-[#111520] rounded-2xl border transition-all duration-500 overflow-hidden ${
+              image 
+                ? 'border-[#4f39f6] shadow-[0_0_20px_rgba(79,57,246,0.3)]' 
+                : 'border-[#4f39f6]/30 shadow-sm'
+            }`}>
               <div className="px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-200 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-transparent">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500"></span>
@@ -204,7 +211,12 @@ function App() {
               </div>
             </div>
 
-            <div ref={outputRef} className="flex flex-col bg-white dark:bg-[#111520] rounded-2xl border border-slate-200 dark:border-slate-800/60 shadow-sm overflow-hidden h-full min-h-[350px] lg:min-h-[400px] scroll-mt-20">
+            {/* OUTPUT CARD */}
+            <div ref={outputRef} className={`flex flex-col bg-white dark:bg-[#111520] rounded-2xl border transition-all duration-500 overflow-hidden h-full min-h-[350px] lg:min-h-[400px] scroll-mt-20 ${
+              extractedText 
+                ? 'border-[#4f39f6] shadow-[0_0_20px_rgba(79,57,246,0.3)]' 
+                : 'border-[#4f39f6]/30 shadow-sm'
+            }`}>
               <div className="px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-200 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-transparent">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full ${extractedText ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'}`}></span>
@@ -241,11 +253,17 @@ function App() {
 
                 {error && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center p-6 text-center">
-                    <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-4 flex items-start gap-3 max-w-sm">
-                      <svg className="w-5 h-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <div>
-                        <h3 className="text-sm font-semibold text-red-800 dark:text-red-400">Extraction Failed</h3>
-                        <p className="text-xs text-red-600 dark:text-red-500 mt-1">{error}</p>
+                    <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-5 flex items-center gap-4 max-w-sm shadow-xl shadow-red-500/5">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
+                        <svg className="w-5 h-5 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div className="text-left">
+                        <h3 className="text-sm font-bold text-red-900 dark:text-red-400 leading-none">Extraction Failed</h3>
+                        <p className="text-xs text-red-700 dark:text-red-500/90 mt-1.5 leading-relaxed">
+                          {error}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -253,7 +271,7 @@ function App() {
                 
                 <textarea
                   className="flex-1 w-full p-4 lg:p-6 bg-transparent border-none focus:ring-0 resize-none outline-none text-slate-700 dark:text-slate-300 font-mono text-sm leading-relaxed"
-                  placeholder={image ? "" : "// Extracted output will be compiled here..."}
+                  placeholder={image ? "" : "Extracted Text will be visible here.."}
                   value={extractedText}
                   onChange={(e) => setExtractedText(e.target.value)} 
                   spellCheck="false"
