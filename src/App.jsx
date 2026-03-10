@@ -182,16 +182,14 @@ function App() {
                 : 'border-[#4f39f6]/30 shadow-sm'
             }`}>
               
-              {/* UPDATED HEADER AREA */}
               <div className="px-5 py-3 lg:px-6 lg:py-4 border-b border-slate-200 dark:border-slate-800/60 flex justify-between items-center bg-slate-50/50 dark:bg-transparent">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                   Source Image
                 </h2>
                 
-                {/* NEW: File details moved to the right side of the header */}
                 {fileDetails.name && (
-                  <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-sm max-w-[60%] sm:max-w-[70%]">
+                  <div className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-md shadow-sm max-w-[60%] sm:max-w-[70%] z-10">
                     <svg className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     <span className="truncate">{fileDetails.name}</span>
                     <span className="text-slate-300 dark:text-slate-600 flex-shrink-0">•</span>
@@ -200,7 +198,7 @@ function App() {
                 )}
               </div>
 
-              <div className="p-4 lg:p-6 flex-1 flex flex-col">
+              <div className="p-4 lg:p-6 flex-1 flex flex-col relative">
                 <div
                   className={`relative flex-1 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 min-h-[200px] lg:min-h-[300px] overflow-hidden group
                     ${isDragging ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-500/10' : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-800/30'}
@@ -214,16 +212,34 @@ function App() {
                   
                   {image ? (
                     <div className="relative w-full h-full flex items-center justify-center group">
-                      <img src={image} alt="Source" className="max-h-[200px] lg:max-h-[400px] object-contain rounded-lg" />
+                      <img src={image} alt="Source" className="max-h-[200px] lg:max-h-[400px] object-contain rounded-lg relative z-0" />
                       
-                      <div 
-                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20 rounded-xl"
-                        onClick={() => fileInputRef.current.click()}
-                      >
-                        <span className="px-4 py-2 rounded-lg bg-white/10 text-white font-medium text-sm border border-white/20 backdrop-blur-md">
-                          Click to swap
-                        </span>
-                      </div>
+                      {/* NEW: SCANNING LASER EFFECT */}
+                      {isLoading && (
+                        <div className="absolute inset-0 z-30 pointer-events-none overflow-hidden rounded-xl bg-indigo-900/5 dark:bg-black/20 mix-blend-multiply dark:mix-blend-normal">
+                          <div 
+                            className="absolute left-0 right-0 h-[2px] bg-[#4f39f6] shadow-[0_0_15px_3px_#4f39f6]" 
+                            style={{ animation: 'scan 2s ease-in-out infinite' }}
+                          >
+                            {/* Gradient tail for the laser */}
+                            <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#4f39f6]/20 to-transparent"></div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!isLoading && (
+                        <div 
+                          className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20 rounded-xl"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fileInputRef.current.click();
+                          }}
+                        >
+                          <span className="px-4 py-2 rounded-lg bg-white/10 text-white font-medium text-sm border border-white/20 backdrop-blur-md">
+                            Click to swap
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="px-4 py-6 lg:px-6 lg:py-8 flex flex-col items-center">
@@ -306,7 +322,7 @@ function App() {
                       </svg>
                     </div>
                     <p className="text-slate-400 dark:text-slate-600 font-medium text-sm">
-                      Waiting Extraction...
+                      Awaiting extraction...
                     </p>
                   </div>
                 )}
