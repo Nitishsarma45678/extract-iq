@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* This base64 string is a small document + magnifying glass icon to match your brand */
+  --favicon-src: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNOSAxSDRhMSAxIDAgMDAtMSAxdjEyYTEgMSAwIDAwMSAxaDhhMSAxIDAgMDAxLTFWNmwtMy01eiIgZmlsbD0iI0RDRTJGMiIgc3Ryb2tlPSIjMUMyMzQxIiBzdHJva2Utd2lkdGg9Ii44Ii8+PHBhdGggZD0iTTEyIDZIOS4yYTAuMiAwLjIgMCAwMTAtMC4yVjMiIGZpbGw9IiNEQ0UyRjIiIHN0cm9rZT0iIzFDMjM0MSIgc3Ryb2tlLXdpZHRoPSIuOCIvPjxwYXRoIGQ9Ik01LjUgNi41aDJtLTIgMi41aDRtLTQgMi41aDQiIHN0cm9rZT0iIzFDMjM0MSIgc3Ryb2tlLXdpZHRoPSIuOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHN2ZyB4PSIzLjUiIHk9IjQuNSI+PGNpcmNsZSBjeD0iNi41IiBjeT0iNi41IiByPSIyLjUiIGZpbGw9IiM2MzdCRkYiIHN0cm9rZT0iIzFDMjM0MSIgc3Ryb2tlLXdpZHRoPSIuNSIvPjxwYXRoIGQ9Ik04LjUgOC41bDIuNSAyLjUiIHN0cm9rZT0iIzFDMjM0MSIgc3Ryb2tlLXdpZHRoPSIuNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+PC9zdmc+');
+}
+
+[rel="icon"] {
+  content: var(--favicon-src);
+}
+
+/* Clean macOS style scrollbar for the text area */
+textarea::-webkit-scrollbar {
+  width: 8px;
+}
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+textarea::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* slate-300 */
+  border-radius: 20px;
+}
+.dark textarea::-webkit-scrollbar-thumb {
+  background-color: #334155; /* slate-700 */
+}
