@@ -2,6 +2,14 @@
 
 A React-based OCR utility tool that extracts text from images while preserving original layout and spacing. It uses the OCR.space API for text recognition and features a fully responsive, dark-mode-enabled UI.
 
+## Features
+
+- Extracts text from images using OCR
+- Preserves original spacing and layout
+- Fully responsive (mobile + desktop)
+- Dark mode support
+- Fast build with Vite
+
 ## Tech Stack
 
 - **Frontend:** React, Vite
@@ -58,14 +66,6 @@ To deploy your own version:
 2. Import the repository into Vercel.
 3. Add the `VITE_OCR_API_KEY` in Vercel Environment Variables.
 4. Deploy.
-
-## Features
-
-- Extracts text from images using OCR
-- Preserves original spacing and layout
-- Fully responsive (mobile + desktop)
-- Dark mode support
-- Fast build with Vite
 
 ## License
 
